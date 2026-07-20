@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Validates a basic ID
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Helper: Checks if the incoming payload is a valid Report structure
+    function isValidReport(data) {
+      return data.keys().hasAll([
+        'id', 'reportId', 'createdAt', 'updatedAt', 'citizenDescription',
+        'latitude', 'longitude', 'resolvedAddress', 'issueCategory', 'severity',
+        'workflowStatus', 'draft', 'aiAnalysis', 'status', 'actionItems', 'voterCount'
+      ])
+      && data.id is string
+      && data.reportId is string
+      && data.citizenDescription is string
+      && data.latitude is number
+      && data.longitude is number
+      && data.resolvedAddress is string
+      && data.issueCategory is string
+      && data.severity is string
+      && data.workflowStatus is string
+      && data.status is string
+      && data.voterCount is int;
+    }
+
+    // Catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reports Collection Rules
+    match /reports/{reportId} {
+      allow read, list: if true;
+      
+      // Permit creation of reports with valid structure and IDs
+      allow create: if isValidId(reportId) && isValidReport(request.resource.data);
+
+      // Support specific updates: either upvoting or workflow changes
+      allow update: if isValidReport(request.resource.data) && (
+        // Action 1: Upvoting (only changes voterCount, hasVoted)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['voterCount', 'hasVoted']) ||
+        // Action 2: Status/Workflow transition (changes status, workflowStatus, actionItems, updatedAt)
+        request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'workflowStatus', 'actionItems', 'updatedAt'])
+      );
+
+      allow delete: if false; // Deletion is disabled for public safety
+
+      // Report history logs
+      match /history/{historyId} {
+        allow read: if true;
+        allow create: if isValidId(historyId) && request.resource.data.keys().hasAll(['historyId', 'reportId', 'changedAt', 'previousStatus', 'newStatus', 'actor']);
+        allow update, delete: if false;
+      }
+    }
+
+    // Departments Collection Rules
+    match /departments/{departmentId} {
+      allow read: if true;
+      allow write: if false; // Managed by city administrators offline
+    }
+
+    // MunicipalWorkflows Collection Rules
+    match /municipalWorkflows/{workflowId} {
+      allow read: if true;
+      allow create, update: if isValidId(workflowId) && request.resource.data.keys().hasAll(['workflowId', 'reportId', 'targetResolutionDate']);
+      allow delete: if false;
+    }
+
+    // Analytics Collection Rules
+    match /analytics/{analyticId} {
+      allow read: if true;
+      allow create: if isValidId(analyticId) && request.resource.data.keys().hasAll(['analyticId', 'metricName', 'metricValue', 'computedAt']);
+      allow update, delete: if false;
+    }
+  }
+}
