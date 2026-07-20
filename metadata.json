@@ -1,0 +1,6 @@
+{
+  "name": "CityLens AI",
+  "description": "An AI-powered civic infrastructure reporting platform matching citizens with municipal services.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
