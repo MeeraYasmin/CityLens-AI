@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "Report": {
+      "title": "Report",
+      "description": "An urban infrastructure incident report submitted by a citizen and analyzed by AI.",
+      "type": "object",
+      "properties": {
+        "reportId": { "type": "string", "description": "Unique identifier of the report" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of creation" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp of last modification" },
+        "imageUrl": { "type": "string", "description": "Public URL of the uploaded image" },
+        "citizenDescription": { "type": "string", "description": "Raw text description of the issue" },
+        "latitude": { "type": "number", "description": "Latitude of the incident" },
+        "longitude": { "type": "number", "description": "Longitude of the incident" },
+        "resolvedAddress": { "type": "string", "description": "Verified human-readable address" },
+        "issueCategory": { "type": "string", "description": "AI-classified category" },
+        "severity": { "type": "string", "description": "AI-classified severity level" },
+        "severityReason": { "type": "string", "description": "AI's reasoning for severity level selection" },
+        "confidenceScore": { "type": "number", "description": "Confidence of AI classification" },
+        "assignedDepartment": { "type": "string", "description": "Municipal department dispatched" },
+        "recommendedAction": { "type": "string", "description": "Primary recommended repair action" },
+        "nearbyInspectionRecommendation": { "type": "string", "description": "AI recommendation for nearby infrastructure" },
+        "uncertaintyFlags": { "type": "array", "description": "List of things the AI is uncertain about" },
+        "workflowStatus": { "type": "string", "description": "Current resolution status of the ticket" },
+        "repairVisualizationUrl": { "type": "string", "description": "Visualization url for the repair dispatch" }
+      },
+      "required": ["reportId", "createdAt", "updatedAt", "citizenDescription", "latitude", "longitude", "issueCategory", "severity", "workflowStatus"]
+    },
+    "ReportHistory": {
+      "title": "ReportHistory",
+      "description": "Chronological history log of changes to a report's lifecycle status or edits.",
+      "type": "object",
+      "properties": {
+        "historyId": { "type": "string", "description": "Log entry UUID" },
+        "reportId": { "type": "string", "description": "Target report reference" },
+        "changedAt": { "type": "string", "format": "date-time", "description": "When the change occurred" },
+        "previousStatus": { "type": "string", "description": "Status before this change" },
+        "newStatus": { "type": "string", "description": "Status after this change" },
+        "actor": { "type": "string", "description": "Who or what made the change (e.g. system, user, ai)" },
+        "notes": { "type": "string", "description": "Optional details or reasoning" }
+      },
+      "required": ["historyId", "reportId", "changedAt", "previousStatus", "newStatus", "actor"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Municipal department responsible for municipal service tickets.",
+      "type": "object",
+      "properties": {
+        "departmentId": { "type": "string", "description": "Short code or name of department" },
+        "name": { "type": "string", "description": "Full department name" },
+        "contactEmail": { "type": "string", "description": "Dispatched notification contact" },
+        "activeWorkforceCount": { "type": "number", "description": "Number of field agents in rotation" }
+      },
+      "required": ["departmentId", "name"]
+    },
+    "MunicipalWorkflow": {
+      "title": "MunicipalWorkflow",
+      "description": "Defines active workflows, operational steps, and SLAs.",
+      "type": "object",
+      "properties": {
+        "workflowId": { "type": "string", "description": "Unique workflow ID" },
+        "reportId": { "type": "string", "description": "Associated report ID" },
+        "assignedTeam": { "type": "string", "description": "Dispatched crew name" },
+        "targetResolutionDate": { "type": "string", "format": "date-time", "description": "SLA targeted completion" },
+        "stepsTotal": { "type": "number", "description": "Total steps in pipeline" },
+        "stepsCompleted": { "type": "number", "description": "Completed action items count" }
+      },
+      "required": ["workflowId", "reportId", "targetResolutionDate"]
+    },
+    "Analytics": {
+      "title": "Analytics",
+      "description": "Aggregated metrics on ticket resolution times, category load, and feedback.",
+      "type": "object",
+      "properties": {
+        "analyticId": { "type": "string", "description": "Metric run UUID" },
+        "metricName": { "type": "string", "description": "e.g. average_resolution_time_hours" },
+        "metricValue": { "type": "number", "description": "Numeric payload" },
+        "computedAt": { "type": "string", "format": "date-time", "description": "Aggregation date-time" },
+        "categoryFilter": { "type": "string", "description": "Optional category filter" }
+      },
+      "required": ["analyticId", "metricName", "metricValue", "computedAt"]
+    }
+  },
+  "firestore": {
+    "/reports/{reportId}": {
+      "schema": "Report",
+      "description": "All citizen-submitted and AI-analyzed public incident reports"
+    },
+    "/reports/{reportId}/history/{historyId}": {
+      "schema": "ReportHistory",
+      "description": "Timeline of events and state changes for a report"
+    },
+    "/departments/{departmentId}": {
+      "schema": "Department",
+      "description": "Municipal departments available for dispatch"
+    },
+    "/municipalWorkflows/{workflowId}": {
+      "schema": "MunicipalWorkflow",
+      "description": "Operational tracking and resolution step workflows"
+    },
+    "/analytics/{analyticId}": {
+      "schema": "Analytics",
+      "description": "Ready-to-query system-wide analytics"
+    }
+  }
+}
